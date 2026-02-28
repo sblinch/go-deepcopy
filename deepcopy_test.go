@@ -71,11 +71,6 @@ func Test_ConfigOption(t *testing.T) {
 	CopyBetweenPtrAndValue(true)(ctx)
 	assert.Equal(t, true, ctx.CopyBetweenPtrAndValue)
 
-	CopyViaCopyingMethod(false)(ctx)
-	assert.Equal(t, false, ctx.CopyViaCopyingMethod)
-	CopyViaCopyingMethod(true)(ctx)
-	assert.Equal(t, true, ctx.CopyViaCopyingMethod)
-
 	IgnoreNonCopyableTypes(false)(ctx)
 	assert.Equal(t, false, ctx.IgnoreNonCopyableTypes)
 	IgnoreNonCopyableTypes(true)(ctx)

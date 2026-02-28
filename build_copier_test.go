@@ -10,7 +10,6 @@ func Test_Ctx_prepare(t *testing.T) {
 	ctx := defaultContext()
 
 	CopyBetweenPtrAndValue(false)(ctx)
-	CopyBetweenStructFieldAndMethod(false)(ctx)
 	IgnoreNonCopyableTypes(false)(ctx)
 	ctx.prepare()
 	assert.Equal(t, uint8(0), ctx.flags)

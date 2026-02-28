@@ -49,8 +49,6 @@ var (
 const (
 	// flagCopyBetweenPtrAndValue indicates copying will be performed between `pointers` and `values`
 	flagCopyBetweenPtrAndValue = 1
-	// flagCopyViaCopyingMethod indicates copying will be performed via copying methods of destination types
-	flagCopyViaCopyingMethod = 2
 	// flagIgnoreNonCopyableTypes indicates copying will skip copying non-copyable types without raising errors
 	flagIgnoreNonCopyableTypes = 3
 )
@@ -70,9 +68,6 @@ func (ctx *Context) prepare() {
 	if ctx.CopyBetweenPtrAndValue {
 		ctx.flags |= 1 << flagCopyBetweenPtrAndValue
 	}
-	if ctx.CopyViaCopyingMethod {
-		ctx.flags |= 1 << flagCopyViaCopyingMethod
-	}
 	if ctx.IgnoreNonCopyableTypes {
 		ctx.flags |= 1 << flagIgnoreNonCopyableTypes
 	}
@@ -91,7 +86,6 @@ func (ctx *Context) createCacheKey(dstType, srcType reflect.Type) *cacheKey {
 func defaultContext() *Context {
 	return &Context{
 		CopyBetweenPtrAndValue: true,
-		CopyViaCopyingMethod:   true,
 		UseGlobalCache:         true,
 	}
 }

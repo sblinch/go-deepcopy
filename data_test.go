@@ -43,13 +43,8 @@ type dstStruct2 struct {
 	MethodVal int `copy:"Method"`
 }
 
-func (d *dstStruct2) CopyMethod(v int) error {
-	d.MethodVal = v * 2
-	return nil
-}
-
 func (d *dstStruct2) EqualSrcStruct2(s *srcStruct2) bool {
-	return d.S == s.S && d.I == s.I && d.U == s.U && d.F == s.F && d.B == s.B && d.MethodVal == s.Method*2
+	return d.S == s.S && d.I == s.I && d.U == s.U && d.F == s.F && d.B == s.B && d.MethodVal == s.Method
 }
 
 type srcStruct1 struct {

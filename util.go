@@ -2,7 +2,6 @@ package deepcopy
 
 import (
 	"reflect"
-	"strings"
 )
 
 var (
@@ -15,29 +14,14 @@ const (
 	typeMethodPostCopy = "PostCopy"
 )
 
-// typeParseMethods collects all copying methods from the given type
-func typeParseMethods(ctx *Context, typ reflect.Type) (
-	copyingMethods map[string]*reflect.Method, postCopyMethod *reflect.Method) {
+// typeParseMethods collects the post-copy method from the given type
+func typeParseMethods(typ reflect.Type) (postCopyMethod *reflect.Method) {
 	ptrType := reflect.PointerTo(typ)
 	numMethods := ptrType.NumMethod()
 	for i := 0; i < numMethods; i++ {
 		method := ptrType.Method(i)
-		switch {
-		// Field copying method name must be something like `Copy<something>`
-		case ctx.CopyViaCopyingMethod && strings.HasPrefix(method.Name, "Copy"):
-			if method.Type.NumIn() != 2 || method.Type.NumOut() != 1 {
-				continue
-			}
-			if method.Type.Out(0) != errType {
-				continue
-			}
-			if copyingMethods == nil {
-				copyingMethods = make(map[string]*reflect.Method)
-			}
-			copyingMethods[method.Name] = &method
-
 		// The method is for `post-copy` event
-		case method.Name == typeMethodPostCopy:
+		if method.Name == typeMethodPostCopy {
 			if method.Type.NumIn() != 2 || method.Type.NumOut() != 1 {
 				continue
 			}
@@ -50,7 +34,7 @@ func typeParseMethods(ctx *Context, typ reflect.Type) (
 			postCopyMethod = &method
 		}
 	}
-	return copyingMethods, postCopyMethod
+	return postCopyMethod
 }
 
 // structParseAllFields parses all fields of a struct including direct fields and fields inherited from embedded structs

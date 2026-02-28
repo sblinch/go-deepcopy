@@ -3,14 +3,12 @@ package deepcopy
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"unsafe"
 )
 
 // mapToStructCopier data structure of copier that copies a map to a struct
 type mapToStructCopier struct {
 	ctx                     *Context
-	mapDstCopyingMethod     map[string]*reflect.Method
 	mapDstStructFields      map[string]*simpleFieldDetail
 	dstStructRequiredFields int
 	postCopyMethod          *int
@@ -47,23 +45,6 @@ func (c *mapToStructCopier) Copy(dstStruct, srcMap reflect.Value) error {
 		srcVal := iter.Value()
 		srcValType := srcVal.Type()
 		keyStr := key.String()
-
-		// Copying methods have higher priority, so if a method defined in the destination, use it
-		if c.mapDstCopyingMethod != nil {
-			methodName := "Copy" + strings.ToUpper(keyStr[:1]) + keyStr[1:]
-			dstCpMethod, exists := c.mapDstCopyingMethod[methodName]
-			if exists && !dstCpMethod.Type.In(1).AssignableTo(srcValType) {
-				return fmt.Errorf("%w: struct method '%v.%s' does not accept argument type '%v' from '%v[%s]'",
-					ErrMethodInvalid, dstStructType, dstCpMethod.Name, srcValType, srcMap.Type(), keyStr)
-			}
-			if exists {
-				err := (&methodCopier{dstMethod: dstCpMethod.Index}).Copy(dstStruct, srcVal)
-				if err != nil {
-					return err
-				}
-				continue
-			}
-		}
 
 		// Find field details from `dst` having the key
 		dfDetail := c.mapDstStructFields[keyStr]
@@ -125,8 +106,7 @@ func (c *mapToStructCopier) init(dstType, srcType reflect.Type) (err error) {
 			ErrTypeNonCopyable, mapKeyType, mapValType, dstType)
 	}
 
-	var postCopyMethod *reflect.Method
-	c.mapDstCopyingMethod, postCopyMethod = typeParseMethods(c.ctx, dstType)
+	postCopyMethod := typeParseMethods(dstType)
 	if postCopyMethod != nil {
 		c.postCopyMethod = &postCopyMethod.Index
 	}

@@ -3,7 +3,6 @@ package deepcopy
 import (
 	"fmt"
 	"reflect"
-	"strings"
 	"unsafe"
 )
 
@@ -57,7 +56,7 @@ func (c *structToMapCopier) init(dstType, srcType reflect.Type) (err error) {
 			ErrTypeNonCopyable, srcType, mapKeyType, mapValType)
 	}
 
-	dstCopyingMethods, postCopyMethod := typeParseMethods(c.ctx, dstType)
+	postCopyMethod := typeParseMethods(dstType)
 	if postCopyMethod != nil {
 		c.postCopyMethod = &postCopyMethod.Index
 	}
@@ -73,21 +72,6 @@ func (c *structToMapCopier) init(dstType, srcType reflect.Type) (err error) {
 		}
 		if sfDetail == nil || sfDetail.ignored || sfDetail.done || sfDetail.field.Anonymous {
 			continue
-		}
-
-		// Copying methods have higher priority, so if a method defined in the dst struct, use it
-		if dstCopyingMethods != nil {
-			methodName := "Copy" + strings.ToUpper(key[:1]) + key[1:]
-			dstCpMethod, exists := dstCopyingMethods[methodName]
-			if exists && !dstCpMethod.Type.In(1).AssignableTo(sfDetail.field.Type) {
-				return fmt.Errorf("%w: struct method '%v.%s' does not accept argument type '%v' from '%v[%s]'",
-					ErrMethodInvalid, dstType, dstCpMethod.Name, sfDetail.field.Type, srcType, sfDetail.field.Name)
-			}
-			if exists {
-				c.fieldCopiers = append(c.fieldCopiers, c.createField2MethodCopier(dstCpMethod, sfDetail))
-				sfDetail.markDone()
-				continue
-			}
 		}
 
 		copier, err := c.buildCopier(mapKeyType, mapValType, srcType, sfDetail, mapKeyNeedConvert)
@@ -140,15 +124,6 @@ func (c *structToMapCopier) buildCopier(mapKeyType, mapValueType, srcStructType 
 	}
 	return c.createField2MapEntryCopier(srcFieldDetail, mapKey,
 		&mapItemCopier{dstType: mapValueType, copier: cp}), nil
-}
-
-func (c *structToMapCopier) createField2MethodCopier(dM *reflect.Method, sfDetail *fieldDetail) copier {
-	return &structField2MethodCopier{
-		dstMethod:          dM.Index,
-		srcFieldIndex:      sfDetail.index,
-		srcFieldUnexported: !sfDetail.field.IsExported(),
-		required:           sfDetail.required || sfDetail.field.IsExported(),
-	}
 }
 
 func (c *structToMapCopier) createField2MapEntryCopier(sf *fieldDetail, key reflect.Value,
