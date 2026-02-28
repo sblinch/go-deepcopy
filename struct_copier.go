@@ -8,9 +8,8 @@ import (
 
 // structCopier data structure of copier that copies from a `struct`
 type structCopier struct {
-	ctx            *Context
-	fieldCopiers   []copier
-	postCopyMethod *int
+	ctx          *Context
+	fieldCopiers []copier
 }
 
 // Copy implementation of Copy function for struct copier
@@ -20,29 +19,11 @@ func (c *structCopier) Copy(dst, src reflect.Value) error {
 			return err
 		}
 	}
-	// Executes post-copy function of the destination struct
-	if c.postCopyMethod != nil {
-		dst = dst.Addr().Method(*c.postCopyMethod)
-		errVal := dst.Call([]reflect.Value{src})[0]
-		if errVal.IsNil() {
-			return nil
-		}
-		err, ok := errVal.Interface().(error)
-		if !ok { // Should never get in here
-			return fmt.Errorf("%w: PostCopy method returns non-error value", ErrTypeInvalid)
-		}
-		return err
-	}
 	return nil
 }
 
 //nolint:gocognit,gocyclo
 func (c *structCopier) init(dstType, srcType reflect.Type) (err error) {
-	postCopyMethod := typeParseMethods(dstType)
-	if postCopyMethod != nil {
-		c.postCopyMethod = &postCopyMethod.Index
-	}
-
 	dstDirectFields, mapDstDirectFields, dstInheritedFields, mapDstInheritedFields := structParseAllFields(dstType)
 	srcDirectFields, mapSrcDirectFields, srcInheritedFields, mapSrcInheritedFields := structParseAllFields(srcType)
 	c.fieldCopiers = make([]copier, 0, len(dstDirectFields)+len(dstInheritedFields))

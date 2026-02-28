@@ -5,37 +5,8 @@ import (
 )
 
 var (
-	errType   = reflect.TypeOf((*error)(nil)).Elem()
-	ifaceType = reflect.TypeOf((*any)(nil)).Elem()
-	strType   = reflect.TypeOf((*string)(nil)).Elem()
+	strType = reflect.TypeOf((*string)(nil)).Elem()
 )
-
-const (
-	typeMethodPostCopy = "PostCopy"
-)
-
-// typeParseMethods collects the post-copy method from the given type
-func typeParseMethods(typ reflect.Type) (postCopyMethod *reflect.Method) {
-	ptrType := reflect.PointerTo(typ)
-	numMethods := ptrType.NumMethod()
-	for i := 0; i < numMethods; i++ {
-		method := ptrType.Method(i)
-		// The method is for `post-copy` event
-		if method.Name == typeMethodPostCopy {
-			if method.Type.NumIn() != 2 || method.Type.NumOut() != 1 {
-				continue
-			}
-			if method.Type.In(1) != ifaceType {
-				continue
-			}
-			if method.Type.Out(0) != errType {
-				continue
-			}
-			postCopyMethod = &method
-		}
-	}
-	return postCopyMethod
-}
 
 // structParseAllFields parses all fields of a struct including direct fields and fields inherited from embedded structs
 func structParseAllFields(typ reflect.Type) (

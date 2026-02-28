@@ -11,7 +11,6 @@ type mapToStructCopier struct {
 	ctx                     *Context
 	mapDstStructFields      map[string]*simpleFieldDetail
 	dstStructRequiredFields int
-	postCopyMethod          *int
 }
 
 type simpleFieldDetail struct {
@@ -80,19 +79,6 @@ func (c *mapToStructCopier) Copy(dstStruct, srcMap reflect.Value) error {
 		}
 	}
 
-	// Executes post-copy function of the destination struct
-	if c.postCopyMethod != nil {
-		method := dstStruct.Addr().Method(*c.postCopyMethod)
-		errVal := method.Call([]reflect.Value{srcMap})[0]
-		if errVal.IsNil() {
-			return nil
-		}
-		err, ok := errVal.Interface().(error)
-		if !ok { // Should never get in here
-			return fmt.Errorf("%w: PostCopy method returns non-error value", ErrTypeInvalid)
-		}
-		return err
-	}
 	return nil
 }
 
@@ -104,11 +90,6 @@ func (c *mapToStructCopier) init(dstType, srcType reflect.Type) (err error) {
 		}
 		return fmt.Errorf("%w: copying from 'map[%v]%v' to struct type '%v' requires map key type to be 'string'",
 			ErrTypeNonCopyable, mapKeyType, mapValType, dstType)
-	}
-
-	postCopyMethod := typeParseMethods(dstType)
-	if postCopyMethod != nil {
-		c.postCopyMethod = &postCopyMethod.Index
 	}
 
 	dstDirectFields, mapDstDirectFields, dstInheritedFields, mapDstInheritedFields := structParseAllFields(dstType)

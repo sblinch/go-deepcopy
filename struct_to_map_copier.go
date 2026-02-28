@@ -8,9 +8,8 @@ import (
 
 // structToMapCopier data structure of copier that copies a `struct` to a map
 type structToMapCopier struct {
-	ctx            *Context
-	fieldCopiers   []copier
-	postCopyMethod *int
+	ctx          *Context
+	fieldCopiers []copier
 }
 
 // Copy implementation of Copy function for struct to map copier
@@ -24,19 +23,6 @@ func (c *structToMapCopier) Copy(dst, src reflect.Value) error {
 		if err := cp.Copy(dst, src); err != nil {
 			return err
 		}
-	}
-	// Executes post-copy function of the destination map
-	if c.postCopyMethod != nil {
-		dst = dst.Addr().Method(*c.postCopyMethod)
-		errVal := dst.Call([]reflect.Value{src})[0]
-		if errVal.IsNil() {
-			return nil
-		}
-		err, ok := errVal.Interface().(error)
-		if !ok { // Should never get in here
-			return fmt.Errorf("%w: PostCopy method returns non-error value", ErrTypeInvalid)
-		}
-		return err
 	}
 	return nil
 }
@@ -54,11 +40,6 @@ func (c *structToMapCopier) init(dstType, srcType reflect.Type) (err error) {
 		}
 		return fmt.Errorf("%w: copying from struct type '%v' to 'map[%v]%v' requires map key type to be 'string'",
 			ErrTypeNonCopyable, srcType, mapKeyType, mapValType)
-	}
-
-	postCopyMethod := typeParseMethods(dstType)
-	if postCopyMethod != nil {
-		c.postCopyMethod = &postCopyMethod.Index
 	}
 
 	srcDirectFields, mapSrcDirectFields, srcInheritedFields, mapSrcInheritedFields := structParseAllFields(srcType)
